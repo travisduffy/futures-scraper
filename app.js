@@ -57,7 +57,7 @@ const main = async () => {
 	console.log('🎉 scrape complete!')
 
 	const futuresData = DOMs.map(extractFuturesData)
-	console.log({ futuresData })
+	console.log({ date: Date(), futuresData })
 }
 
 main()
