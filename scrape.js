@@ -1,19 +1,22 @@
 const fetch = require('node-fetch')
 const cheerio = require('cheerio')
 
-// Root URLS
+// URL builders
 const rootURL = 'https://ca.investing.com'
-const indicesURL = `${rootURL}/indices`
-const commoditiesURL = `${rootURL}/commodities`
+const indexURL = endpoint => `${rootURL}/indices${endpoint}`
+const commURL = endpoint => `${rootURL}/commodities${endpoint}`
 
 // Indices
-const spxURL = `${indicesURL}/us-spx-500-futures-advanced-chart`
-const nqURL = `${indicesURL}/nq-100-futures`
-const vixURL = `${indicesURL}/us-spx-vix-futures`
+const spxURL = indexURL('/us-spx-500-futures-advanced-chart')
+const nqURL = indexURL('/nq-100-futures')
+const vixURL = indexURL('/us-spx-vix-futures')
 
 // Commodities
-const gldURL = `${commoditiesURL}/gold`
-const slvURL = `${commoditiesURL}/silver`
+const gldURL = commURL('/gold')
+const slvURL = commURL('/silver')
+
+// URLs to scrape
+const URLs = [spxURL, nqURL, vixURL, gldURL, slvURL]
 
 // Builds request for fetching HTML and converting to a cheerio DOM object
 const getDOM = async url => {
@@ -40,23 +43,27 @@ const extractFuturesData = DOM => {
 			priceData[i] = DOM(elem).text()
 		})
 
+	const greenClockIcon = DOM(
+		'div.instrumentDataDetails > div.left > div.bottom > span.greenClockBigIcon'
+	)
+
 	return {
 		name,
 		price: priceData[0],
 		dlrChange: priceData[1],
 		percChange: priceData[2],
+		marketsOpen: greenClockIcon.length ? true : false,
 	}
 }
 
 const main = async () => {
-	const urls = [spxURL, nqURL, vixURL, gldURL, slvURL]
-	const promises = urls.map(getDOM)
-
 	console.log('⏳ scraping...')
-	const DOMs = await Promise.all(promises)
-	console.log('🎉 scrape complete!')
 
+	const promises = URLs.map(getDOM)
+	const DOMs = await Promise.all(promises)
 	const futuresData = DOMs.map(extractFuturesData)
+
+	console.log('🎉 scrape complete! 🎉')
 	console.log({ date: Date(), futuresData })
 }
 
